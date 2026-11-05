@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Рулетка еды</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- ===== Рулетка ===== -->
+    <section class="screen active" id="screen-roulette">
+      <header class="top">
+        <button class="chip" id="streak" title="Серия дней, когда ты готовил(а)"></button>
+        <button class="icon-btn" id="btn-theme" title="Тема">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2 12h2.2M19.8 12H22M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+        </button>
+      </header>
+
+      <h1 class="headline">Что сегодня будет у нас в меню?</h1>
+
+      <div class="machine" id="machine"><!-- reels --></div>
+
+      <div class="spin-wrap">
+        <button class="spin-btn" id="btn-spin">Крутить!</button>
+      </div>
+    </section>
+
+    <!-- ===== Блюда (история / избранное / статистика) ===== -->
+    <section class="screen" id="screen-dishes">
+      <h2 class="screen-title">Мои блюда</h2>
+      <div class="segmented" id="dishes-tabs">
+        <button data-tab="history" class="on">История</button>
+        <button data-tab="fav">Избранное</button>
+        <button data-tab="stats">Статистика</button>
+      </div>
+      <div id="dishes-body"></div>
+    </section>
+
+    <!-- ===== Настройки ===== -->
+    <section class="screen" id="screen-settings">
+      <h2 class="screen-title">Настройки</h2>
+      <div id="settings-body"></div>
+    </section>
+
+    <!-- ===== Редактор колонки ===== -->
+    <section class="screen" id="screen-editor">
+      <div class="editor-head">
+        <button class="icon-btn back" id="btn-editor-back">‹</button>
+        <input class="title-input" id="editor-title" maxlength="16" />
+      </div>
+      <div id="editor-body"></div>
+    </section>
+
+    <nav class="tabbar" id="tabbar">
+      <button data-screen="dishes" title="Мои блюда">
+        <svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4c3 0 4 2 4 4v5"/><path d="M26 13v1a10 10 0 0 1-20 0v-1z"/><path d="M11 9c0-1.5 1-2 1-3.5M15 9c0-1.5 1-2 1-3.5M19 9c0-1.5 1-2 1-3.5"/></svg>
+      </button>
+      <button data-screen="roulette" class="on" title="Рулетка">
+        <svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="24" height="20" rx="4"/><path d="M12 6v20M20 6v20"/><circle cx="8" cy="16" r="1.4" fill="currentColor"/><circle cx="16" cy="16" r="1.4" fill="currentColor"/><circle cx="24" cy="16" r="1.4" fill="currentColor"/></svg>
+      </button>
+      <button data-screen="settings" title="Настройки">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Bottom sheet (результат, редактирование продукта и т.п.) -->
+  <div class="sheet-backdrop" id="sheet-backdrop"></div>
+  <div class="sheet" id="sheet"><div class="sheet-grip"></div><div id="sheet-body"></div></div>
+
+  <div class="toast" id="toast"></div>
+  <canvas id="confetti"></canvas>
+  <input type="file" id="file-input" accept="image/*" hidden />
+
+  <script src="js/defaults.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/reel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
