@@ -54,6 +54,7 @@
       else if (kind === 'win') [523, 659, 784, 1047].forEach((f, i) => blip(f, 0.16, 'triangle', 0.07, i * 0.09));
       else if (kind === 'jackpot') [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => blip(f, 0.14, 'square', 0.05, i * 0.08));
       else if (kind === 'pop') blip(880, 0.05, 'sine', 0.06);
+      else if (kind === 'lever') { blip(140, 0.12, 'sawtooth', 0.06); [0.05, 0.09, 0.13].forEach(t => blip(900, 0.02, 'square', 0.03, t)); blip(90, 0.18, 'triangle', 0.1, 0.18); }
     } catch (e) { /* ignore */ }
   };
 

@@ -17,6 +17,7 @@
       positions: {}, // colId -> itemId (где остановился барабан)
       settings: {
         theme: 'auto',
+        skin: 'slot', // slot — игровой автомат, classic — минимал
         haptics: true,
         sound: true,
         shake: true,

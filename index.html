@@ -8,8 +8,9 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Lobster&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/slot.css" />
 </head>
 <body>
   <div id="app">
@@ -24,9 +25,39 @@
 
       <h1 class="headline">Что сегодня будет у нас в меню?</h1>
 
-      <div class="machine" id="machine"><!-- reels --></div>
+      <div class="cabinet" id="cabinet">
+        <!-- Вывеска автомата (только в оформлении «Автомат») -->
+        <div class="slot-only marquee">
+          <i class="m-star"></i>
+          <div class="sign"><span class="neon">Рулетка еды</span></div>
+        </div>
+        <div class="slot-only ticker"><div class="ticker-track"><span>Что сегодня будет у нас в меню?</span><span>★ Крути барабаны ★</span><span>Ужин решает удача</span><span>★ Джекпот — твоё любимое блюдо ★</span><span>Что сегодня будет у нас в меню?</span><span>★ Крути барабаны ★</span><span>Ужин решает удача</span><span>★ Джекпот — твоё любимое блюдо ★</span></div></div>
 
-      <div class="spin-wrap">
+        <div class="window">
+          <div class="machine" id="machine"><!-- reels --></div>
+          <div class="slot-only lever" id="lever" title="Потяни рычаг!">
+            <div class="lever-rod"><div class="lever-knob"></div></div>
+            <div class="lever-hub"></div>
+          </div>
+        </div>
+
+        <div class="slot-only console">
+          <div class="holds" id="holds"></div>
+          <button class="red-btn" id="btn-spin-slot" aria-label="Крутить"><span>КРУТИ</span></button>
+        </div>
+
+        <div class="slot-only base">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <div class="base-panel">
+            <div class="neon small" id="base-neon">Удачи!</div>
+            <div class="led" id="led">ПРОКРУТОК 0000</div>
+          </div>
+          <div class="lights"><i></i><i></i><i></i></div>
+        </div>
+
+      </div>
+
+      <div class="spin-wrap classic-only">
         <button class="spin-btn" id="btn-spin">Крутить!</button>
       </div>
     </section>

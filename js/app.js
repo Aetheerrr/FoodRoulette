@@ -38,6 +38,7 @@ window.APP_CONFIG = {
       else theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     }
     document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.skin = S().settings.skin || 'slot';
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
     if (FX.inTelegram && FX.vOk('6.1')) {
       try {
@@ -84,6 +85,9 @@ window.APP_CONFIG = {
     const cols = Store.activeColumns();
     machine.classList.toggle('cols-4', cols.length >= 4);
     reels = [];
+    const holds = $('#holds');
+    holds.innerHTML = '';
+    updateLed();
 
     if (!cols.length) {
       machine.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="big">🫙</span>Нет ни одной включённой колонки.<br>Загляни в настройки ⚙️</div>`;
@@ -117,6 +121,15 @@ window.APP_CONFIG = {
       $('.up', el).addEventListener('click', () => reel.step(-1));
       $('.down', el).addEventListener('click', () => reel.step(1));
       $('.lock-btn', el).addEventListener('click', () => toggleLock(entry));
+
+      // Кнопка «Держать» на пульте автомата
+      const hold = document.createElement('button');
+      hold.className = 'hold' + (locked.has(col.id) ? ' on' : '');
+      hold.innerHTML = `<b>${locked.has(col.id) ? '🔒' : '🔓'}</b>Держать`;
+      hold.title = col.title;
+      hold.addEventListener('click', () => toggleLock(entry));
+      holds.appendChild(hold);
+      entry.hold = hold;
     });
     // высота ячеек известна только после вставки в DOM
     requestAnimationFrame(() => reels.forEach(r => { r.reel.nodes.forEach(n => (n._idx = null)); r.reel.render(); }));
@@ -134,6 +147,10 @@ window.APP_CONFIG = {
     if (locked.has(id)) locked.delete(id); else locked.add(id);
     entry.el.classList.toggle('locked', locked.has(id));
     $('.lock-btn', entry.el).textContent = locked.has(id) ? '🔒' : '🔓';
+    if (entry.hold) {
+      entry.hold.classList.toggle('on', locked.has(id));
+      entry.hold.querySelector('b').textContent = locked.has(id) ? '🔒' : '🔓';
+    }
     FX.haptic(locked.has(id) ? 'rigid' : 'soft');
     toast(locked.has(id) ? `«${entry.col.title}» зафиксирована 🔒` : `«${entry.col.title}» снова крутится`);
     FX.sound('pop');
@@ -214,8 +231,7 @@ window.APP_CONFIG = {
       return;
     }
     busy = true;
-    $('#btn-spin').disabled = true;
-    $('#btn-spin').textContent = 'Крутим…';
+    setSpinning(true);
     FX.haptic('heavy');
     reels.forEach(r => r.el.classList.remove('win'));
 
@@ -235,8 +251,8 @@ window.APP_CONFIG = {
     S().stats.spins++;
     Store.save();
     busy = false;
-    $('#btn-spin').disabled = false;
-    $('#btn-spin').textContent = 'Крутить!';
+    setSpinning(false);
+    updateLed();
     updateHint();
     setTimeout(showResult, 250);
   }
@@ -275,10 +291,44 @@ window.APP_CONFIG = {
   function updateHint() {
     if (hintShown || S().stats.spins >= 3) return;
     hintShown = true;
-    setTimeout(() => toast('Свайпай колонки, тап по центру перекручивает одну, 🔓 фиксирует. А ещё можно потрясти телефон 📳', 5000), 900);
+    const slot = (S().settings.skin || 'slot') === 'slot';
+    setTimeout(() => toast(slot
+      ? 'Дёрни рычаг 🎰 или жми КРУТИ. «Держать» оставляет колонку, тап по барабану перекручивает одну. Можно и потрясти телефон 📳'
+      : 'Свайпай колонки, тап по центру перекручивает одну, 🔓 фиксирует. А ещё можно потрясти телефон 📳', 5500), 900);
   }
 
   $('#btn-spin').addEventListener('click', spin);
+  $('#btn-spin-slot').addEventListener('click', spin);
+
+  function setSpinning(on) {
+    $('#btn-spin').disabled = on;
+    $('#btn-spin').textContent = on ? 'Крутим…' : 'Крутить!';
+    $('#btn-spin-slot').disabled = on;
+  }
+  function updateLed() {
+    $('#led').textContent = 'ПРОКРУТОК ' + String(S().stats.spins).padStart(4, '0');
+  }
+
+  /* Рычаг: потянуть вниз или просто тапнуть */
+  (function lever() {
+    const el = $('#lever');
+    let startY = null, fired = false;
+    const pull = () => {
+      if (busy || el.classList.contains('pull')) return;
+      el.classList.add('pull');
+      FX.unlockAudio();
+      FX.sound('lever');
+      FX.haptic('heavy');
+      setTimeout(() => { el.classList.remove('pull'); spin(); }, 230);
+    };
+    el.addEventListener('pointerdown', e => { startY = e.clientY; fired = false; el.setPointerCapture(e.pointerId); });
+    el.addEventListener('pointermove', e => {
+      if (startY === null || fired) return;
+      if (e.clientY - startY > 28) { fired = true; pull(); }
+    });
+    el.addEventListener('pointerup', () => { if (startY !== null && !fired) pull(); startY = null; });
+    el.addEventListener('pointercancel', () => { startY = null; });
+  })();
   FX.onShake(() => {
     if (currentScreen === 'roulette' && !sheetOpen() && !busy) spin();
   });
@@ -357,6 +407,10 @@ window.APP_CONFIG = {
     `);
     if (fav) $('[data-act="fav"]', $('#sheet')).classList.add('on');
 
+    $('#base-neon').textContent = title;
+    const cab = $('#cabinet');
+    cab.classList.add('jackpot');
+    setTimeout(() => cab.classList.remove('jackpot'), jackpot ? 4000 : 1600);
     if (jackpot) { FX.sound('jackpot'); FX.confetti(180); }
     else { FX.sound('win'); FX.confetti(70); }
     FX.haptic('success');
@@ -597,6 +651,8 @@ window.APP_CONFIG = {
         <div class="row"><span class="ico">📳</span><div class="grow">Вибрация</div>${switchHtml('haptics', s.haptics)}</div>
         <div class="row"><span class="ico">🔊</span><div class="grow">Звуки</div>${switchHtml('sound', s.sound)}</div>
         <div class="row"><span class="ico">🤳</span><div class="grow">Встряхнуть, чтобы крутить</div>${switchHtml('shake', s.shake)}</div>
+        <div class="row" style="flex-wrap:wrap"><span class="ico">🎨</span><div class="grow">Оформление</div>
+          <div class="pills">${[['slot', '🎰 Автомат'], ['classic', '✨ Минимал']].map(([v, l]) => `<button class="pill ${(s.skin || 'slot') === v ? 'on' : ''}" data-skin="${v}">${l}</button>`).join('')}</div></div>
         <div class="row" style="flex-wrap:wrap"><span class="ico">🌗</span><div class="grow">Тема</div>
           <div class="pills">${[['auto', 'Авто'], ['dark', 'Тёмная'], ['light', 'Светлая']].map(([v, l]) => `<button class="pill ${s.theme === v ? 'on' : ''}" data-theme="${v}">${l}</button>`).join('')}</div></div>
       </div>
@@ -635,6 +691,7 @@ window.APP_CONFIG = {
     if (!t) return;
     if (t.dataset.edit) return openEditor(t.dataset.edit);
     if (t.dataset.norepeat !== undefined) { S().settings.noRepeatDays = +t.dataset.norepeat; Store.save(); renderSettings(); FX.haptic('tick'); return; }
+    if (t.dataset.skin) { S().settings.skin = t.dataset.skin; Store.save(); applyTheme(); renderSettings(); FX.haptic('tick'); return; }
     if (t.dataset.theme) { S().settings.theme = t.dataset.theme; Store.save(); applyTheme(); renderSettings(); FX.haptic('tick'); return; }
     if (t.dataset.delPerson !== undefined) { S().people.names.splice(+t.dataset.delPerson, 1); Store.save(); renderSettings(); return; }
     if (t.id === 'add-person') return addPerson();

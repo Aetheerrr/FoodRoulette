@@ -1,0 +1,280 @@
+/* ===== Оформление «Игровой автомат» (html:root[data-skin="slot"]) ===== */
+
+.slot-only { display: none; }
+:root[data-skin="slot"] .slot-only { display: block; }
+:root[data-skin="slot"] .classic-only,
+:root[data-skin="slot"] .headline,
+:root[data-skin="slot"] .reel-head .lock-btn,
+:root[data-skin="slot"] .arrow { display: none; }
+
+:root[data-skin="slot"] {
+  --gold: linear-gradient(180deg, #f8dc9c 0%, #d39a4a 22%, #9a6127 48%, #c88a40 70%, #f0c477 86%, #8a5420 100%);
+  --gold-side: linear-gradient(90deg, #8a5420 0%, #e9b96c 18%, #f8dc9c 32%, #c88a40 60%, #9a6127 100%);
+  --burgundy: radial-gradient(ellipse at 50% 30%, #9b2446 0%, #5a1029 55%, #36081a 100%);
+  --stars:
+    radial-gradient(1.2px 1.2px at 12% 30%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(1px 1px at 28% 72%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.4px 1.4px at 46% 18%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1px 1px at 63% 64%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.2px 1.2px at 81% 26%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(1px 1px at 92% 78%, rgba(255,255,255,.5), transparent 60%);
+  --cell-h: clamp(74px, calc((100dvh - 455px) / 3), 110px);
+}
+
+/* Тёплая палитра под автомат */
+:root[data-skin="slot"][data-theme="dark"] {
+  --bg: #140c11; --band: #1e1318; --col: #2a1a22; --card: #2c1e26; --card-2: #3a2731;
+  --text: #fff4e6; --muted: #b59a8f; --line: #4a3340;
+  --accent: #ffc23d; --accent-ink: #3b2200; --accent-glow: rgba(255,194,61,.35);
+}
+:root[data-skin="slot"][data-theme="light"] {
+  --bg: #f7efe4; --band: #efe2d0; --col: #e6d5c0; --card: #ffffff; --card-2: #f5ebde;
+  --text: #2a1610; --muted: #8a6f60; --line: #e3d2bf;
+  --accent: #eaa51f; --accent-ink: #2e1800; --accent-glow: rgba(234,165,31,.35);
+}
+:root[data-skin="slot"][data-theme="dark"] body {
+  background: radial-gradient(120% 60% at 50% 30%, #2a0f1c 0%, #140c11 60%) fixed, #140c11;
+}
+
+/* ---------- Корпус ---------- */
+:root[data-skin="slot"] .top { min-height: 46px; padding-top: 6px; }
+:root[data-skin="slot"] .cabinet {
+  position: relative;
+  margin: 0 46px 0 12px;
+  filter: drop-shadow(0 14px 24px rgba(0,0,0,.45));
+}
+
+/* Вывеска-арка */
+.marquee {
+  position: relative;
+  margin: 14px 8px 0;
+  padding: 6px 6px 5px;
+  background: var(--gold);
+  border-radius: 120px 120px 10px 10px / 48px 48px 10px 10px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.25);
+}
+.m-star {
+  position: absolute; left: 50%; top: -17px; transform: translateX(-50%);
+  width: 30px; height: 30px; background: var(--gold);
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.sign {
+  height: 64px;
+  border-radius: 114px 114px 6px 6px / 42px 42px 6px 6px;
+  background: var(--stars), var(--burgundy);
+  display: grid; place-items: center;
+  box-shadow: inset 0 0 0 2px rgba(255,210,140,.5), inset 0 6px 16px rgba(0,0,0,.45);
+  padding-top: 6px;
+}
+.neon {
+  font-family: Lobster, "Brush Script MT", cursive;
+  font-size: 34px; line-height: 1;
+  color: #fff1d6;
+  text-shadow: 0 0 2px #fff, 0 0 6px #ffb3c1, 0 0 12px #ff2d55, 0 0 22px #ff2d55, 0 0 34px #ff0033;
+  animation: flicker 7s infinite;
+  white-space: nowrap;
+}
+@keyframes flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: .55; }
+}
+
+/* Бегущая строка */
+.ticker {
+  height: 26px; overflow: hidden; position: relative;
+  margin: 0 2px;
+  background: #07060a;
+  border: 3px solid #b77a35; border-top: 0;
+  border-radius: 0 0 6px 6px;
+}
+.ticker-track {
+  display: flex; width: max-content; height: 100%; align-items: center;
+  animation: ticker 22s linear infinite;
+}
+.ticker span {
+  font-size: 11.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: #ffcf5a; text-shadow: 0 0 6px rgba(255,190,60,.8);
+  padding: 0 22px; white-space: nowrap;
+}
+@keyframes ticker { to { transform: translateX(-50%); } }
+
+/* Окно с барабанами */
+:root[data-skin="slot"] .window {
+  position: relative;
+  margin-top: 8px;
+  padding: 9px;
+  background: var(--gold-side);
+  border-radius: 18px 18px 6px 6px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.4), inset 0 -3px 0 rgba(0,0,0,.25);
+}
+:root[data-skin="slot"] .machine {
+  position: relative;
+  background: linear-gradient(#12080c, #241018 50%, #12080c);
+  border-radius: 11px;
+  padding: 7px 7px 8px;
+  gap: 6px;
+  box-shadow: inset 0 4px 14px rgba(0,0,0,.7);
+}
+/* стрелки линии выигрыша */
+:root[data-skin="slot"] .machine::before,
+:root[data-skin="slot"] .machine::after {
+  content: ""; position: absolute; z-index: 3;
+  top: calc(7px + 20px + 3px + var(--cell-h) * 1.5);
+  transform: translateY(-50%);
+  border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+}
+:root[data-skin="slot"] .machine::before { left: -2px; border-left: 10px solid #ff2d45; filter: drop-shadow(0 0 4px #ff2d45); }
+:root[data-skin="slot"] .machine::after { right: -2px; border-right: 10px solid #ff2d45; filter: drop-shadow(0 0 4px #ff2d45); }
+
+:root[data-skin="slot"] .reel-head {
+  height: 20px; margin-bottom: 0; font-size: 10.5px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .08em; color: #f3c877;
+  text-shadow: 0 1px 0 rgba(0,0,0,.6);
+}
+:root[data-skin="slot"] .reel-box {
+  padding: 3px; border-radius: 10px;
+  background: var(--gold-side);
+  box-shadow: 0 2px 6px rgba(0,0,0,.6);
+}
+:root[data-skin="slot"] .reel {
+  border-radius: 7px;
+  background: linear-gradient(to bottom, #8e8578 0%, #e4ddd0 16%, #fffdf8 50%, #e4ddd0 84%, #8e8578 100%);
+  -webkit-mask-image: none; mask-image: none;
+}
+/* объём барабана */
+:root[data-skin="slot"] .reel::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background:
+    linear-gradient(to bottom, rgba(40,20,10,.55) 0%, rgba(40,20,10,0) 24%, rgba(40,20,10,0) 76%, rgba(40,20,10,.55) 100%),
+    linear-gradient(to right, rgba(0,0,0,.18), transparent 14%, transparent 86%, rgba(0,0,0,.18));
+}
+:root[data-skin="slot"] .cell { padding: 0; }
+:root[data-skin="slot"] .cell-inner {
+  background: transparent; border-radius: 0; gap: 4px;
+  box-shadow: inset 0 -1px 0 rgba(90,60,30,.12);
+}
+:root[data-skin="slot"] .cell-emoji { font-size: clamp(30px, calc(var(--cell-h) * .4), 42px); filter: drop-shadow(0 3px 3px rgba(60,30,10,.3)); }
+:root[data-skin="slot"] .cell-name { color: #3a1d12; font-weight: 700; font-size: 12px; }
+:root[data-skin="slot"] .frame { padding: 0; z-index: 1; }
+:root[data-skin="slot"] .frame::after {
+  border: 0; border-radius: 0;
+  border-top: 2px solid rgba(214,24,48,.7); border-bottom: 2px solid rgba(214,24,48,.7);
+  box-shadow: none; background: transparent;
+}
+:root[data-skin="slot"] .reel-col.win .frame::after { animation: slot-win .45s ease 3; }
+@keyframes slot-win { 50% { background: rgba(255,200,60,.35); border-color: #ffb300; } }
+:root[data-skin="slot"] .reel-col.locked .reel-box { background: linear-gradient(90deg, #c25f00, #ffc04d 40%, #ff9a1a); box-shadow: 0 0 12px rgba(255,160,30,.7); }
+:root[data-skin="slot"] .reel-col.locked .frame::after { border-color: #ff9a1a; background: rgba(255,170,40,.12); box-shadow: none; }
+:root[data-skin="slot"] .machine.cols-4 .cell-name { font-size: 10.5px; }
+:root[data-skin="slot"] .machine.cols-4 .reel-head { font-size: 9px; letter-spacing: .03em; }
+
+/* Рычаг */
+.lever {
+  position: absolute; right: -40px; top: 6%; bottom: 34%; width: 34px;
+  cursor: grab; touch-action: none;
+}
+.lever-rod {
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  width: 8px; height: calc(100% - 16px);
+  background: linear-gradient(90deg, #7a4a1c, #f8dc9c 45%, #a8692b);
+  border-radius: 4px;
+  transition: height .5s cubic-bezier(.3,1.6,.5,1);
+}
+.lever-knob {
+  position: absolute; left: 50%; top: -15px; transform: translateX(-50%);
+  width: 30px; height: 30px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffb0b0 0%, #ff3045 30%, #c3071c 62%, #6d020c 100%);
+  box-shadow: 0 4px 8px rgba(0,0,0,.45);
+}
+.lever-hub {
+  position: absolute; left: -6px; right: 4px; bottom: 0; height: 30px;
+  background: var(--gold); border-radius: 0 10px 10px 0;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.4);
+}
+.lever.pull .lever-rod { height: 18%; transition: height .18s ease-in; }
+
+/* Пульт: кнопки «Держать» + красная кнопка */
+.console {
+  margin-top: 2px;
+  padding: 10px 10px 12px;
+  background: var(--gold);
+  border-radius: 6px 6px 14px 14px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.45), inset 0 -3px 0 rgba(0,0,0,.25);
+}
+:root[data-skin="slot"] .console { display: flex; align-items: center; gap: 10px; }
+.holds { flex: 1; display: flex; gap: 6px; }
+.hold {
+  flex: 1; height: 44px; border-radius: 9px;
+  background: linear-gradient(#ffffff, #ddd6cb);
+  color: #5a3a22; font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  box-shadow: 0 4px 0 #8f8577, 0 6px 8px rgba(0,0,0,.35);
+  transition: transform .08s, box-shadow .08s;
+}
+.hold b { font-size: 14px; line-height: 1; }
+.hold:active { transform: translateY(3px); box-shadow: 0 1px 0 #8f8577, 0 2px 4px rgba(0,0,0,.35); }
+.hold.on {
+  background: linear-gradient(#ffd77a, #ff9a1a); color: #3a1800;
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #a65a00, 0 0 14px rgba(255,170,40,.8);
+}
+.red-btn {
+  flex: none; width: 66px; height: 66px; border-radius: 50%;
+  border: 4px solid #3a1d10;
+  background: radial-gradient(circle at 35% 30%, #ffb3b3 0%, #ff3045 28%, #d10a22 60%, #7a0410 100%);
+  box-shadow: 0 5px 0 #5c0009, 0 9px 16px rgba(0,0,0,.45), inset 0 -4px 8px rgba(0,0,0,.3);
+  color: #fff; font-size: 11px; font-weight: 900; letter-spacing: .06em;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5);
+  transition: transform .08s, box-shadow .08s, filter .2s;
+}
+.red-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #5c0009, 0 3px 8px rgba(0,0,0,.45), inset 0 -2px 6px rgba(0,0,0,.3); }
+.red-btn:disabled { filter: brightness(.65) saturate(.6); }
+.red-btn:not(:disabled) { animation: btn-glow 1.6s ease-in-out infinite; }
+@keyframes btn-glow { 50% { box-shadow: 0 5px 0 #5c0009, 0 0 22px rgba(255,40,60,.75), inset 0 -4px 8px rgba(0,0,0,.3); } }
+
+/* Нижняя панель с лампочками */
+:root[data-skin="slot"] .base {
+  display: flex; gap: 8px; align-items: stretch;
+  margin-top: 8px; padding: 8px;
+  background: var(--gold); border-radius: 14px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.45), inset 0 -3px 0 rgba(0,0,0,.25);
+}
+.lights { display: flex !important; flex-direction: column; justify-content: space-around; }
+.lights i {
+  display: block; width: 9px; height: 9px; border-radius: 50%;
+  background: #ff6a2a; box-shadow: 0 0 8px #ff3b1f, 0 0 2px #fff inset;
+  animation: bulb 1.2s infinite alternate;
+}
+.lights i:nth-child(2) { animation-delay: .4s; }
+.lights i:nth-child(3) { animation-delay: .8s; }
+@keyframes bulb { from { opacity: 1; } to { opacity: .25; box-shadow: none; } }
+.cabinet.jackpot .lights i { animation-duration: .18s; }
+.base-panel {
+  flex: 1; min-width: 0;
+  background: var(--stars), var(--burgundy);
+  border-radius: 9px; padding: 7px 10px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  box-shadow: inset 0 0 0 1.5px rgba(255,210,140,.45);
+}
+.neon.small { font-size: 21px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+.led {
+  background: #04060a; color: #5fe0ff;
+  font: 700 11px/1 ui-monospace, "Consolas", monospace; letter-spacing: .22em;
+  padding: 5px 10px; border-radius: 5px;
+  text-shadow: 0 0 6px #4fd8ff;
+  box-shadow: inset 0 0 0 1px #1d2a35;
+}
+
+/* Небольшие экраны: убираем нижнюю панель, чтобы всё влезло */
+@media (max-height: 760px) {
+  :root[data-skin="slot"] { --cell-h: clamp(70px, calc((100dvh - 375px) / 3), 104px); }
+  :root[data-skin="slot"] .base { display: none; }
+}
+@media (max-height: 640px) {
+  :root[data-skin="slot"] { --cell-h: clamp(66px, calc((100dvh - 335px) / 3), 96px); }
+  :root[data-skin="slot"] .ticker { display: none; }
+}
+@media (max-width: 350px) {
+  :root[data-skin="slot"] .cabinet { margin-right: 40px; margin-left: 8px; }
+  .neon { font-size: 29px; }
+}
