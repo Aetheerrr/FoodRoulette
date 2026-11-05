@@ -170,14 +170,38 @@ window.APP_CONFIG = {
   /* Выбираем цели для всех барабанов с учётом фиксации и «не повторять» */
   function chooseTargets() {
     const avoid = recentCombos();
-    let best = null;
-    for (let attempt = 0; attempt < 40; attempt++) {
-      const targets = reels.map(r => locked.has(r.col.id) ? r.reel.currentIndex() : weightedPick(r.reel.items));
+    const sane = S().settings.sanity;
+    let fallback = null;
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const targets = sane ? sensibleTargets() : reels.map(r => locked.has(r.col.id) ? r.reel.currentIndex() : weightedPick(r.reel.items));
+      if (!targets) continue; // в этот раз не сложилось — пробуем ещё
       const picks = reels.map((r, i) => r.reel.items[targets[i]]);
-      best = targets;
-      if (!avoid.has(comboKey(picks))) break;
+      if (!avoid.has(comboKey(picks))) return targets;
+      fallback = fallback || targets; // нормальное, но недавно готовили
     }
-    return best;
+    if (fallback) return fallback;
+    // Нормального сочетания нет (например, зафиксировано что-то несочетаемое) — крутим как есть
+    toast('С зафиксированным ничего толком не сочетается 🤷 Крутим наугад');
+    return reels.map(r => locked.has(r.col.id) ? r.reel.currentIndex() : weightedPick(r.reel.items));
+  }
+
+  /* Выбор по очереди: каждая следующая колонка выбирает только из того, что сочетается с уже выбранным */
+  function sensibleTargets() {
+    const targets = new Array(reels.length);
+    const chosen = [];
+    reels.forEach((r, i) => {
+      if (locked.has(r.col.id)) { targets[i] = r.reel.currentIndex(); chosen.push(r.reel.items[targets[i]]); }
+    });
+    const order = reels.map((_, i) => i).filter(i => targets[i] === undefined).sort(() => Math.random() - 0.5);
+    for (const i of order) {
+      const items = reels[i].reel.items;
+      const ok = items.map((it, idx) => idx).filter(idx => chosen.every(c => Store.compatible(c, items[idx])));
+      if (!ok.length) return null;
+      const pick = ok[weightedPick(ok.map(idx => items[idx]))];
+      targets[i] = pick;
+      chosen.push(items[pick]);
+    }
+    return targets;
   }
 
   async function spin() {
@@ -222,7 +246,16 @@ window.APP_CONFIG = {
     busy = true;
     FX.unlockAudio();
     entry.el.classList.remove('win');
-    const idx = weightedPick(entry.reel.items);
+    const items = entry.reel.items;
+    const others = reels.filter(r => r !== entry).map(r => r.reel.current());
+    let pool = items.map((_, i) => i);
+    if (S().settings.sanity) {
+      const ok = pool.filter(i => others.every(o => Store.compatible(o, items[i])));
+      if (ok.length) pool = ok;
+      else toast('С остальными колонками тут ничего не сочетается 🤷');
+    }
+    if (pool.length > 1) pool = pool.filter(i => i !== entry.reel.currentIndex()); // чтобы точно что-то поменялось
+    const idx = pool[weightedPick(pool.map(i => items[i]))];
     await entry.reel.spinTo(idx, 10 + ((Math.random() * 4) | 0), 1200);
     entry.el.classList.add('win');
     FX.haptic('medium');
@@ -282,8 +315,7 @@ window.APP_CONFIG = {
     return `🎰 Рулетка решила: сегодня у нас ${picks.map(p => p.emoji).join('')}\n${title} (${sub.toLowerCase()})${extra || ''}`;
   }
   function recipeUrl(picks) {
-    const q = picks.map(p => p.name).reverse().join(' ') + ' рецепт';
-    return 'https://yandex.ru/search/?text=' + encodeURIComponent(q);
+    return 'https://yandex.ru/search/?text=' + encodeURIComponent(DEFAULTS.recipeQuery(picks));
   }
 
   function showResult() {
@@ -302,12 +334,16 @@ window.APP_CONFIG = {
 
     const { title, sub } = dishTitle(picks);
     const jackpot = fav;
+    const weird = !Store.comboOk(reels.map(r => r.reel.current()));
+    const quip = jackpot ? '⭐ Это же твоё любимое! Рулетка знает толк.'
+      : weird ? (set.sanity ? 'Смелое сочетание… ты точно сам(а) это выкрутил(а)? 🤨' : '🤪 Безумный режим: удачи на кухне!')
+      : rnd(DEFAULTS.quips);
     openSheet(`
       <div class="result">
         <div class="big-emojis">${picks.map(p => `<span>${visual(p)}</span>`).join('')}</div>
         <div class="dish">${esc(title)}</div>
         <div class="method">${esc(sub)}</div>
-        <div class="quip">${jackpot ? '⭐ Это же твоё любимое! Рулетка знает толк.' : esc(rnd(DEFAULTS.quips))}</div>
+        <div class="quip">${esc(quip)}</div>
         ${twist ? `<div class="twist">Челлендж: ${esc(twist)}</div>` : ''}
         ${cook ? `<div class="duty"><div>👨‍🍳 Готовит<b>${esc(cook)}</b></div><div>🧽 Моет посуду<b>${esc(washer)}</b></div></div>` : ''}
       </div>
@@ -543,6 +579,7 @@ window.APP_CONFIG = {
 
       <div class="group-title">Весёлое</div>
       <div class="group">
+        <div class="row"><span class="ico">${s.sanity ? '🧠' : '🤪'}</span><div class="grow">Здравый смысл<div class="sub">${s.sanity ? 'Без «варёного стейка». Выключи — будет безумный режим' : 'Безумный режим: выпадает что угодно'}</div></div>${switchHtml('sanity', s.sanity)}</div>
         <div class="row"><span class="ico">🎯</span><div class="grow">Челлендж от шефа<div class="sub">Случайное условие к блюду</div></div>${switchHtml('twists', s.twists)}</div>
         <div class="row"><span class="ico">👨‍🍳</span><div class="grow">Кто готовит, кто моет<div class="sub">Рулетка выберет дежурных</div></div>
           <label class="switch"><input type="checkbox" id="people-on" ${p.enabled ? 'checked' : ''}><i></i></label></div>
@@ -580,6 +617,7 @@ window.APP_CONFIG = {
       S().settings[t.dataset.set] = t.checked;
       if (t.dataset.set === 'shake') FX.setShake(t.checked);
       if (t.dataset.set === 'sound' && t.checked) { FX.unlockAudio(); FX.sound('pop'); }
+      if (t.dataset.set === 'sanity') { Store.save(); renderSettings(); toast(t.checked ? '🧠 Здравый смысл включён' : '🤪 Безумный режим! Возможно всё'); }
     } else if (t.dataset.colOn) {
       const c = S().columns.find(x => x.id === t.dataset.colOn);
       c.enabled = t.checked;
@@ -716,7 +754,15 @@ window.APP_CONFIG = {
   function itemSheet(itemId) {
     const c = col();
     const existing = itemId ? c.items.find(i => i.id === itemId) : null;
-    const draft = existing ? { ...existing } : { id: Store.uid(), name: '', emoji: '🍽️', img: null, weight: 1, enabled: true };
+    const draft = existing ? { ...existing, no: (existing.no || []).slice() } : { id: Store.uid(), name: '', emoji: '🍽️', img: null, weight: 1, enabled: true, no: [] };
+
+    // Продукты других колонок и текущие запреты (в любую сторону)
+    const otherCols = S().columns.filter(x => x.id !== c.id && x.items.length);
+    const banSel = new Set();
+    if (existing) otherCols.forEach(oc => oc.items.forEach(o => { if (!Store.compatible(existing, o)) banSel.add(o.id); }));
+    const bansHtml = otherCols.map(oc => `
+      <div class="ban-col">${esc(oc.title)}</div>
+      <div class="pills">${oc.items.map(o => `<button class="pill ${banSel.has(o.id) ? 'ban' : ''}" data-ban="${o.id}">${o.emoji} ${esc(o.name)}</button>`).join('')}</div>`).join('');
 
     const pv = () => draft.img ? `<img src="${draft.img}" alt="">` : draft.emoji;
     openSheet(`
@@ -737,6 +783,11 @@ window.APP_CONFIG = {
       </div>
       <div class="row" style="padding:10px 2px;border:0"><div class="grow">Участвует в рулетке</div>
         <label class="switch"><input type="checkbox" id="item-on" ${draft.enabled ? 'checked' : ''}><i></i></label></div>
+      ${otherCols.length ? `<details class="bans">
+        <summary>🚫 Не сочетается с… <b id="ban-count">${banSel.size || ''}</b></summary>
+        <p class="ban-hint">Отмеченное красным рулетка не поставит вместе с этим продуктом (если включён «Здравый смысл»).</p>
+        <div id="ban-list">${bansHtml}</div>
+      </details>` : ''}
       <div class="sheet-actions">
         ${existing ? '<button class="btn danger" id="item-del">Удалить</button>' : ''}
         <button class="btn primary" id="item-save">Сохранить</button>
@@ -762,12 +813,34 @@ window.APP_CONFIG = {
       $$('#weight button').forEach(x => x.classList.toggle('on', x === b));
       FX.haptic('tick');
     };
+    if ($('#ban-list')) $('#ban-list').onclick = e => {
+      const b = e.target.closest('[data-ban]');
+      if (!b) return;
+      const id = b.dataset.ban;
+      if (banSel.has(id)) banSel.delete(id); else banSel.add(id);
+      b.classList.toggle('ban', banSel.has(id));
+      $('#ban-count').textContent = banSel.size || '';
+      FX.haptic('tick');
+    };
     $('#photo').onclick = () => pickPhoto(img => { draft.img = img; refreshPv(); });
     $('#photo-del').onclick = () => { draft.img = null; refreshPv(); };
     $('#item-save').onclick = () => {
       draft.name = $('#item-name').value.trim();
       draft.enabled = $('#item-on').checked;
       if (!draft.name) { toast('Напиши название'); $('#item-name').focus(); return; }
+      if (existing && existing.name !== draft.name) Store.renameRefs(existing.name, draft.name);
+      // Применяем запреты: отмеченное — в свой список, снятое — убираем с обеих сторон
+      const me = draft.name.toLowerCase();
+      const oldMe = existing ? existing.name.toLowerCase() : me;
+      otherCols.forEach(oc => oc.items.forEach(o => {
+        const on = o.name.toLowerCase();
+        if (banSel.has(o.id)) {
+          if (!draft.no.includes(on) && !(o.no || []).includes(me)) draft.no.push(on);
+        } else {
+          draft.no = draft.no.filter(x => x !== on);
+          if (o.no) o.no = o.no.filter(x => x !== me && x !== oldMe);
+        }
+      }));
       if (existing) Object.assign(existing, draft); else c.items.push(draft);
       Store.save();
       closeSheet();

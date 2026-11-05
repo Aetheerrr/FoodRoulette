@@ -330,6 +330,20 @@ textarea.input { height: 110px; padding: 10px 12px; resize: none; font-size: 12p
 .preview .btns { display: flex; flex-direction: column; gap: 6px; flex: 1; }
 .preview .btn { height: 36px; font-size: 13px; }
 .sheet-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+.bans { background: var(--card); border-radius: 14px; padding: 0 12px; margin-top: 6px; }
+.bans summary { list-style: none; cursor: pointer; padding: 14px 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.bans summary::-webkit-details-marker { display: none; }
+.bans summary::after { content: "›"; margin-left: auto; color: var(--muted); font-size: 22px; transition: transform .2s; }
+.bans[open] summary::after { transform: rotate(90deg); }
+.bans summary b { background: rgba(255,90,95,.18); color: var(--danger); border-radius: 999px; padding: 1px 8px; font-size: 13px; }
+.bans summary b:empty { display: none; }
+.ban-hint { color: var(--muted); font-size: 12.5px; margin: -4px 0 8px; line-height: 1.35; }
+.ban-col { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; margin: 12px 0 6px; }
+.bans .pills { gap: 5px; }
+.bans .pill { height: 30px; font-size: 12.5px; padding: 0 10px; font-weight: 500; color: var(--text); }
+.pill.ban { background: rgba(255,90,95,.2); color: var(--danger); text-decoration: line-through; }
+.bans #ban-list { padding-bottom: 12px; }
 .sheet-actions .btn { flex: 1; }
 
 /* ---------- Toast & confetti ---------- */

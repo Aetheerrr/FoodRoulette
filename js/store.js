@@ -9,7 +9,7 @@
         id: c.id,
         title: c.title,
         enabled: c.enabled,
-        items: c.items.map(([name, emoji]) => ({ id: uid(), name, emoji, img: null, weight: 1, enabled: true })),
+        items: c.items.map(([name, emoji]) => ({ id: uid(), name, emoji, img: null, weight: 1, enabled: true, no: DEFAULTS.defaultBans(c.id, name) })),
       })),
       people: { enabled: false, names: DEFAULTS.people.slice() },
       history: [],   // { id, ts, picks:[{col, name, emoji, img}], twist, cook, washer }
@@ -22,6 +22,7 @@
         shake: true,
         twists: false,
         noRepeatDays: 3,
+        sanity: true, // «здравый смысл»: не предлагать несочетаемое
       },
       stats: { spins: 0 },
       defaultsVersion: DEFAULTS.version,
@@ -41,6 +42,10 @@
         }
       });
     });
+    // v3: правила сочетаемости для продуктов, у которых их ещё нет
+    state.columns.forEach(col => col.items.forEach(it => {
+      if (!Array.isArray(it.no)) it.no = DEFAULTS.defaultBans(col.id, it.name);
+    }));
     state.defaultsVersion = DEFAULTS.version;
     return true;
   }
@@ -84,6 +89,26 @@
       Store.state = fresh();
       Store.save();
     },
+    /* Можно ли подать эти продукты вместе (проверяем запреты в обе стороны) */
+    compatible(a, b) {
+      if (!a || !b || a === b) return true;
+      const an = a.name.toLowerCase(), bn = b.name.toLowerCase();
+      return !((a.no || []).includes(bn) || (b.no || []).includes(an));
+    },
+    comboOk(items) {
+      for (let i = 0; i < items.length; i++)
+        for (let j = i + 1; j < items.length; j++)
+          if (!Store.compatible(items[i], items[j])) return false;
+      return true;
+    },
+    /* Переименование: обновляем ссылки в запретах других продуктов */
+    renameRefs(oldName, newName) {
+      const o = oldName.toLowerCase(), n = newName.toLowerCase();
+      if (o === n) return;
+      Store.state.columns.forEach(c => c.items.forEach(it => {
+        if (it.no) it.no = it.no.map(x => (x === o ? n : x));
+      }));
+    },
     activeColumns() {
       return Store.state.columns.filter(c => c.enabled && c.items.some(i => i.enabled));
     },
@@ -92,7 +117,8 @@
     exportCode() {
       const data = Store.state.columns.map(c => ({
         t: c.title, e: c.enabled ? 1 : 0,
-        i: c.items.map(i => [i.name, i.emoji, i.weight, i.enabled ? 1 : 0]),
+        d: c.id,
+        i: c.items.map(i => [i.name, i.emoji, i.weight, i.enabled ? 1 : 0, i.no || []]),
       }));
       const json = JSON.stringify({ v: 1, c: data, p: Store.state.people.names });
       return 'FR1:' + btoa(unescape(encodeURIComponent(json)));
@@ -102,13 +128,15 @@
       if (!code.startsWith('FR1:')) throw new Error('bad prefix');
       const json = JSON.parse(decodeURIComponent(escape(atob(code.slice(4)))));
       if (!json || !Array.isArray(json.c) || !json.c.length) throw new Error('bad data');
+      const used = new Set();
       Store.state.columns = json.c.slice(0, 4).map((c, idx) => ({
-        id: uid(),
+        id: (c.d && /^(side|main|method|sauce)$/.test(c.d) && !used.has(c.d)) ? (used.add(c.d), c.d) : uid(),
         title: String(c.t || 'Колонка ' + (idx + 1)).slice(0, 16),
         enabled: !!c.e,
-        items: (c.i || []).slice(0, 60).map(([name, emoji, weight, en]) => ({
+        items: (c.i || []).slice(0, 80).map(([name, emoji, weight, en, no]) => ({
           id: uid(), name: String(name).slice(0, 24), emoji: emoji || '🍽️', img: null,
           weight: Math.min(3, Math.max(1, +weight || 1)), enabled: en !== 0,
+          no: Array.isArray(no) ? no.map(s => String(s).toLowerCase()).slice(0, 120) : [],
         })),
       }));
       if (Array.isArray(json.p)) Store.state.people.names = json.p.slice(0, 12).map(String);
